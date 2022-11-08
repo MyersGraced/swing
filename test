@@ -1,0 +1,137 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+
+public class stMarks extends JDialog {
+    private JTextField txtName;
+    private JTextField txtEmail;
+    private JTextField txtNumber;
+    private JTextField txtAddress;
+    private JButton btnRegister;
+    private JButton btnCancel;
+    private JPasswordField pwdPassword;
+    private JPasswordField pwdComfirm;
+    private JPanel registerPanel;
+
+    public stMarks( JFrame parent){
+        super(parent);
+        setTitle ("Create a new account");
+        setContentPane(registerPanel);
+        setMinimumSize(new Dimension(450, 475));
+        setModal(true);
+        setLocationRelativeTo(parent);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+
+        btnRegister.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                registerUser();
+
+            }
+        });
+        btnCancel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                closeApp();
+            }
+        });
+        setVisible(true);
+    }
+
+    private void closeApp() {
+    }
+
+    private void registerUser() {
+        String name = txtName.getText();
+        String email = txtEmail.getText();
+        String studentNumber = txtNumber.getText();
+        String address = txtAddress.getText();
+        String password = String.valueOf(pwdPassword.getPassword());
+        String comfirmPassword = String.valueOf(pwdComfirm.getPassword());
+
+        if (name.isEmpty() || email.isEmpty() || studentNumber.isEmpty() || address.isEmpty() || password.isEmpty() ){
+            JOptionPane.showMessageDialog( this,
+                    "please enter all fields",
+                    "try again",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (!password.equals(comfirmPassword)){
+            JOptionPane.showMessageDialog( this,
+                    "Passwwords do not match",
+                    "Enter matching password",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        user  = addUserToDatabase (name, email, studentNumber, address, password );{
+            if (user != null) {
+                closeApp();
+            }else{
+                JOptionPane.showMessageDialog( this,
+                        "Failed to register student",
+                        "Try again!",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    public User user;
+    private User addUserToDatabase (String name,String email, String studentNumber, String address, String password ){
+        User user = null;
+
+        final String DB_URL = "jdbc:mysql://localhost:3306/root";
+        final String USERNAME = "root";
+        final String PASSWORD = "";
+
+        try{
+            Connection conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
+
+            Statement stmt = conn.createStatement();
+            String sql  = "INSERT INTO users(name, email, studentNumber, address, password)" +
+                    "VALUES (?,?,?,?,?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, email);
+            preparedStatement.setString(3, studentNumber);
+            preparedStatement.setString(4, address);
+            preparedStatement.setString(5, password);
+
+            int addedRows = preparedStatement.executeUpdate();
+            if (addedRows > 0){
+                user = new User();
+                user.name = name;
+                user.email = email;
+                user.studentNumber =  studentNumber;
+                user.address = address;
+                user.password =  password;
+
+            }
+
+            stmt.close();
+            conn.close();
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return user;
+    }
+
+    public static void main(String[] args) {
+        stMarks stMarks = new stMarks( null);
+        User user  = stMarks.user;
+
+        if (user != null){
+            System.out.println("Registration of " + user.name + " successful!");
+        }else{
+            System.out.println("Registration failed!");
+        }
+
+
+
+
+    }
+}
